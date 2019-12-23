@@ -241,6 +241,8 @@ website/package-lock.json
 # cquery cache
 /.cquery-cache
 
+# clangd index
+/.clangd
 # ccls cache
 /.ccls-cache
 

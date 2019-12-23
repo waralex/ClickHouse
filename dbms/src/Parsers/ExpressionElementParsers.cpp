@@ -1,5 +1,6 @@
 #include <errno.h>
 #include <cstdlib>
+#include <memory>
 
 #include <Poco/String.h>
 
@@ -20,6 +21,8 @@
 #include <Parsers/ASTOrderByElement.h>
 #include <Parsers/ASTSubquery.h>
 #include <Parsers/ASTFunctionWithKeyValueArguments.h>
+#include <Parsers/ASTWindow.h>
+#include <Parsers/ASTWindowFunction.h>
 
 #include <Parsers/parseIntervalKind.h>
 #include <Parsers/ExpressionListParsers.h>
@@ -32,6 +35,8 @@
 #include <Parsers/queryToString.h>
 #include <boost/algorithm/string.hpp>
 #include "ASTColumnsMatcher.h"
+#include "Parsers/ASTWindow.h"
+#include "Parsers/IAST_fwd.h"
 
 
 namespace DB
@@ -1248,6 +1253,7 @@ bool ParserExpressionElement::parseImpl(Pos & pos, ASTPtr & node, Expected & exp
         || ParserLeftExpression().parse(pos, node, expected)
         || ParserRightExpression().parse(pos, node, expected)
         || ParserCase().parse(pos, node, expected)
+        || ParserWindowFunction().parse(pos, node, expected)
         || ParserColumnsMatcher().parse(pos, node, expected) /// before ParserFunction because it can be also parsed as a function.
         || ParserFunction().parse(pos, node, expected)
         || ParserQualifiedAsterisk().parse(pos, node, expected)
@@ -1469,6 +1475,52 @@ bool ParserIdentifierWithOptionalParameters::parseImpl(Pos & pos, ASTPtr & node,
     }
 
     return false;
+}
+bool ParserWindow::parseImpl(Pos & pos, ASTPtr & node, Expected & expected)
+{
+    ParserNotEmptyExpressionList exp_list(false);
+    ASTPtr partition_expression_list;
+    ParserKeyword s_partition("PARTITION BY");
+    if (s_partition.ignore(pos, expected))
+    {
+        if (!exp_list.parse(pos, partition_expression_list, expected))
+            return false;
+    }
+
+    auto window = std::make_shared<ASTWindow>();
+    node = window;
+    window->set(window->partition, partition_expression_list);
+    return true;
+}
+bool ParserWindowFunction::parseImpl(Pos & pos, ASTPtr & node, Expected & expected)
+{
+    ParserFunction s_source_function(true);
+    ParserWindow s_window;
+    ParserKeyword s_over("OVER");
+    ParserToken s_lparen(TokenType::OpeningRoundBracket);
+    ParserToken s_rparen(TokenType::ClosingRoundBracket);
+    ASTPtr source_fuction;
+    ASTPtr window;
+    if (!s_source_function.parse(pos, source_fuction, expected))
+        return false;
+    
+    if (!s_over.ignore(pos, expected))
+        return false;
+    if (!s_lparen.ignore(pos, expected))
+        return false;
+
+    if (!s_window.parse(pos, window, expected))
+        return false;
+
+    if (!s_rparen.ignore(pos, expected))
+        return false;
+
+
+    auto window_function = std::make_shared<ASTWindowFunction>();
+    node = window_function;
+    window_function->set(window_function->source_function, source_fuction);
+    window_function->set(window_function->window, window);
+    return true;
 }
 
 }

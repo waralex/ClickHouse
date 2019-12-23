@@ -11,7 +11,7 @@ try
     using namespace DB;
 
     std::string input =
-        " SELECT 18446744073709551615, f(1), '\\\\', [a, b, c], (a, b, c), 1 + 2 * -3, a = b OR c > d.1 + 2 * -g[0] AND NOT e < f * (x + y)"
+        " SELECT 18446744073709551615, f(1), '\\\\', [a, b, c], (a, b, c), 1 + 2 * -3, a = b OR c > d.1 + 2 * -g[0] AND NOT e < f * (x + y), 1 + avg(x) OVER () as ddd, avg(x) OVER (PARTITION BY a) * 10 as ddd"
         " FROM default.hits"
         " WHERE CounterID = 101500 AND UniqID % 3 = 0"
         " GROUP BY UniqID"

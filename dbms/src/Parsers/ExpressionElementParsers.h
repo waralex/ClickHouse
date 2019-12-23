@@ -330,4 +330,28 @@ protected:
     bool parseImpl(Pos & pos, ASTPtr & node, Expected & expected);
 };
 
+/** Window of window funciton expression 
+ * [PARTITION BY expr[, ....]] 
+ * [ORDER BY ...]
+ * [frame_clause]
+ * */
+class ParserWindow : public IParserBase
+{
+protected:
+    const char * getName() const { return "window defenition"; }
+    bool parseImpl(Pos & pos, ASTPtr & node, Expected & expected);
+};
+
+/** Window funciton expression 
+ * function OVER ([window definition]) 
+ * */
+class ParserWindowFunction : public IParserBase
+{
+protected:
+    const char * getName() const { return "window function"; }
+    bool parseImpl(Pos & pos, ASTPtr & node, Expected & expected);
+};
+
 }
+
+
